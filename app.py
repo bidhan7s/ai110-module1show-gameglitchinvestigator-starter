@@ -4,10 +4,12 @@ import streamlit as st
 def get_range_for_difficulty(difficulty: str):
     if difficulty == "Easy":
         return 1, 20
+    # FIXME: Logic breaks here
     if difficulty == "Normal":
-        return 1, 100
-    if difficulty == "Hard":
         return 1, 50
+    # FIXME: Logic breaks here
+    if difficulty == "Hard":
+        return 1, 100  # Fixed: Hard was 1-50 and Normal was 1-100 (swapped); collaborated with AI to restore correct difficulty progression
     return 1, 100
 
 
