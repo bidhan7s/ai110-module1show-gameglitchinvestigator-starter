@@ -13,12 +13,21 @@ def parse_guess(raw: str):
 
 
 def check_guess(guess, secret):
-    """
-    Compare guess to secret and return (outcome, message).
-
-    outcome examples: "Win", "Too High", "Too Low"
-    """
-    raise NotImplementedError("Refactor this function from app.py into logic_utils.py")
+    """Compare guess to secret and return outcome: "Win", "Too High", or "Too Low"."""
+    if guess == secret:
+        return "Win"
+    # FIXME: Logic breaks here
+    try:
+        if guess > secret:
+            return "Too High"  # Fixed: collaborated with AI; guess > secret correctly signals "Too High" — prior messages had directions inverted
+        return "Too Low"
+    except TypeError:
+        g = str(guess)
+        if g == secret:
+            return "Win"
+        if g > secret:
+            return "Too High"
+        return "Too Low"
 
 
 def update_score(current_score: int, outcome: str, attempt_number: int):

@@ -16,6 +16,11 @@ def test_guess_too_high():
     result = check_guess(60, 50)
     assert result == "Too High"
 
+def test_higher_guess_returns_too_high():
+    """A guess above the secret must return 'Too High', not 'Too Low'."""
+    result = check_guess(60, 50)
+    assert result == "Too High", f"Expected 'Too High' for guess 60 > secret 50, got '{result}'"
+
 def test_guess_too_low():
     # If secret is 50 and guess is 40, hint should be "Too Low"
     result = check_guess(40, 50)
