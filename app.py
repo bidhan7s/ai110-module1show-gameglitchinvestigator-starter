@@ -1,54 +1,11 @@
-import random
 import streamlit as st
-from logic_utils import check_guess
-
-def get_range_for_difficulty(difficulty: str):
-    if difficulty == "Easy":
-        return 1, 20
-    # FIXME: Logic breaks here
-    if difficulty == "Normal":
-        return 1, 50
-    # FIXME: Logic breaks here
-    if difficulty == "Hard":
-        return 1, 100  # Fixed: Hard was 1-50 and Normal was 1-100 (swapped); collaborated with AI to restore correct difficulty progression
-    return 1, 100
-
-
-def parse_guess(raw: str):
-    if raw is None:
-        return False, None, "Enter a guess."
-
-    if raw == "":
-        return False, None, "Enter a guess."
-
-    try:
-        if "." in raw:
-            value = int(float(raw))
-        else:
-            value = int(raw)
-    except Exception:
-        return False, None, "That is not a number."
-
-    return True, value, None
-
-
-
-def update_score(current_score: int, outcome: str, attempt_number: int):
-    if outcome == "Win":
-        points = 100 - 10 * (attempt_number + 1)
-        if points < 10:
-            points = 10
-        return current_score + points
-
-    if outcome == "Too High":
-        if attempt_number % 2 == 0:
-            return current_score + 5
-        return current_score - 5
-
-    if outcome == "Too Low":
-        return current_score - 5
-
-    return current_score
+from logic_utils import (
+    check_guess,
+    get_range_for_difficulty,
+    initial_game_state,
+    parse_guess,
+    update_score,
+)
 
 st.set_page_config(page_title="Glitchy Guesser", page_icon="🎮")
 
@@ -76,19 +33,8 @@ st.sidebar.caption(f"Range: {low} to {high}")
 st.sidebar.caption(f"Attempts allowed: {attempt_limit}")
 
 if "secret" not in st.session_state:
-    st.session_state.secret = random.randint(low, high)
-
-if "attempts" not in st.session_state:
-    st.session_state.attempts = 1
-
-if "score" not in st.session_state:
-    st.session_state.score = 0
-
-if "status" not in st.session_state:
-    st.session_state.status = "playing"
-
-if "history" not in st.session_state:
-    st.session_state.history = []
+    for key, val in initial_game_state(low, high).items():
+        st.session_state[key] = val
 
 st.subheader("Make a guess")
 
@@ -102,6 +48,7 @@ with st.expander("Developer Debug Info"):
     st.write("Attempts:", st.session_state.attempts)
     st.write("Score:", st.session_state.score)
     st.write("Difficulty:", difficulty)
+    # FIXME: Logic breaks here
     st.write("History:", st.session_state.history)
 
 raw_guess = st.text_input(
@@ -109,17 +56,24 @@ raw_guess = st.text_input(
     key=f"guess_input_{difficulty}"
 )
 
+# FIX: Refactored state logic and fixed lockout/lag using agent mode
+def _append_guess_to_history():
+    raw = st.session_state.get(f"guess_input_{difficulty}", "")
+    ok, guess_int, _ = parse_guess(raw)
+    st.session_state.history.append(guess_int if ok else raw)
+
 col1, col2, col3 = st.columns(3)
 with col1:
-    submit = st.button("Submit Guess 🚀")
+    submit = st.button("Submit Guess 🚀", on_click=_append_guess_to_history)
 with col2:
     new_game = st.button("New Game 🔁")
 with col3:
     show_hint = st.checkbox("Show hint", value=True)
 
+# FIXME: Logic breaks here
 if new_game:
-    st.session_state.attempts = 0
-    st.session_state.secret = random.randint(1, 100)
+    for key, val in initial_game_state(low, high).items():
+        st.session_state[key] = val
     st.success("New game started.")
     st.rerun()
 
@@ -136,11 +90,8 @@ if submit:
     ok, guess_int, err = parse_guess(raw_guess)
 
     if not ok:
-        st.session_state.history.append(raw_guess)
         st.error(err)
     else:
-        st.session_state.history.append(guess_int)
-
         if st.session_state.attempts % 2 == 0:
             secret = str(st.session_state.secret)
         else:
